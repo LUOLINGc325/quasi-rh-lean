@@ -1,0 +1,8 @@
+.lake/
+upstream/.lake/
+upstream/.cache/
+*.log
+*.olean
+*.ilean
+*.trace
+.worktrees/

@@ -1,0 +1,71 @@
+quasi-rh-lean
+Copyright 2026 LUOLINGc325
+
+This repository is licensed under the Apache License, Version 2.0 (see LICENSE),
+except that the third-party components listed below remain under their own
+licenses and copyright notices. The mathematical content formalized here is the
+manuscript "The Quasi-Riemann Hypothesis" by OpenAI; this repository is an
+independent formalization and is not an official OpenAI artifact.
+
+Original to this repository (Copyright 2026 LUOLINGc325, Apache-2.0): everything
+not listed under "Third-party components" below, in particular QRH.lean, QRH/,
+stage3/, build/, and
+  upstream/OAI/NumberTheory/DirichletL/PrimeCounting/LandauAnnularBridge.lean
+(the last file lives in the upstream/OAI tree but was written for this project;
+it is not part of the OpenAI release).
+
+Third-party components
+----------------------
+
+1. OpenAI Math Release (https://github.com/openai/math), Apache-2.0
+   Pinned revision: 1581d4cbdd69a0faf34b2089614fe2a814316a6a
+   - upstream/OAI/NumberTheory/DirichletL/ (327 files): taken from lean/OAI/ of the
+     release and byte-identical to it at the revision above, except for the
+     project-written file named above. Only part of the release library is
+     included; its own main theorems (e.g. the 7/8 results) are not used here.
+     License text: upstream/OAI/LICENSE.
+   - source-material/preprints/ (TeX sources and READMEs of the manuscripts
+     "The Quasi-Riemann Hypothesis" (October 5, 2026) and "The Quasi-Riemann
+     Hypothesis: A Zero-Free Half-Plane Re(s)>7/8" (September 30, 2026)),
+     author OpenAI, copied unmodified.
+
+2. rellich-kondrachov (https://github.com/abenenson/rellich-kondrachov), Apache-2.0
+   Copyright (c) 2026 Adam Benenson (as stated in the file headers)
+   Pinned revision: 70f85d4c1bf99c6e7d61e8be4daa6f3664d08d23
+   - upstream/RellichKondrachov/: 15 Lean files (subdirectory RellichKondrachov/ of
+     the upstream repository). MODIFIED: 11 of the 15 files were adapted
+     (changed relative to the pinned revision); the 11 modified files are
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/H1.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/Rellich.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/Translation.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/TranslationEstimateH1.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/TranslationEstimateL2.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/L2Compactness/Approximation.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/L2Compactness/ArzelaAscoli.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/L2Compactness/Compactness.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/L2Compactness/Kernels.lean
+       Analysis/FunctionalSpaces/Sobolev/Euclidean/L2Compactness/Transfer.lean
+       MeasureTheory/Function/LpSpace/Restrict.lean
+     License text: upstream/RellichKondrachov/LICENSE.
+
+3. PrimeNumberTheoremAnd (https://github.com/AlexKontorovich/PrimeNumberTheoremAnd), Apache-2.0
+   Pinned revision: c39a751132c88b6e8080b74c74023fd95b3d8be0
+   - upstream/PrimeNumberTheoremAnd/: 6 Lean files (the transitive import closure of
+     PrimeNumberTheoremAnd.Wiener). MODIFIED: SmoothExistence.lean and Wiener.lean.
+     The blueprint attributes were removed; in Wiener.lean four declarations that
+     this project does not use (two of which contain `sorry` upstream) were removed.
+     The other four files are unmodified.
+     License text: upstream/PrimeNumberTheoremAnd/LICENSE.
+
+Dependencies that are NOT included (fetched by Lake at build time)
+------------------------------------------------------------------
+Lean 4 (https://github.com/leanprover/lean4, toolchain v4.34.1) and Mathlib
+(https://github.com/leanprover-community/mathlib4, revision
+d13f23b723b8a846827a245b89c10fc7d3f11612), both Apache-2.0, together with
+Mathlib's own dependencies (batteries, aesop, Qq, plausible, ProofWidgets4,
+import-graph, LeanSearchClient, lean4-cli), each under the license of its own
+repository. Their exact revisions are recorded in the lake-manifest.json files.
+
+Per Section 4(b) of the Apache License, the modifications to components 2 and 3
+are recorded in this file; the modified .lean files themselves carry no separate
+change notice.

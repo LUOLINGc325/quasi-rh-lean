@@ -1,0 +1,105 @@
+name: build
+
+# Clean build of the proof root QRHShort.Manuscript and the statement modules,
+# a no-`sorry` check of the build log, and an axiom audit of the main theorems.
+# Modeled on the acceptance harness that produced the results quoted in README.md.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    defaults:
+      run:
+        shell: bash
+        working-directory: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        working-directory: .
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Install elan and the pinned toolchain
+        run: |
+          set -euo pipefail
+          retry() { for i in 1 2 3 4; do "$@" && return 0; echo "retry $i: $*" >&2; sleep $((i*15)); done; "$@"; }
+          installer=$(mktemp)
+          retry curl --fail --location --retry 3 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o "$installer"
+          sh "$installer" -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          retry elan toolchain install "$(cat lean-toolchain)"
+          lake --version
+
+      - name: Fetch Mathlib (official cache)
+        run: |
+          set -euo pipefail
+          retry() { for i in 1 2 3 4; do "$@" && return 0; echo "retry $i: $*" >&2; sleep $((i*15)); done; "$@"; }
+          retry lake exe cache get
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          for p in json.loads(Path('lake-manifest.json').read_text())['packages']:
+              actual = subprocess.check_output(['git', '-C', '.lake/packages/' + p['name'], 'rev-parse', 'HEAD'], text=True).strip()
+              if actual != p['rev']:
+                  raise SystemExit('Dependency revision mismatch: ' + p['name'])
+          print('All dependency revisions match the lockfile')
+          PY
+
+      - name: Build QRHShort.Manuscript and the statement modules
+        run: |
+          set -euo pipefail
+          lake build QRHShort.Manuscript QRHShort.MainStatements QRHShort.External 2>&1 | tee build.log
+
+      - name: No sorry in the build log
+        run: |
+          if grep -nE "declaration uses ['\`]?sorry" build.log; then
+            echo "::error::build log contains 'declaration uses sorry'"; exit 1
+          fi
+          echo "no sorry warnings"
+
+      - name: Axiom audit of the main theorems
+        run: |
+          set -euo pipefail
+          lake env lean PrintAxioms.lean 2>&1 | tee axioms.txt
+          python3 - <<'PY'
+          import re, sys
+          text = open('axioms.txt').read()
+          allowed = {'propext', 'Classical.choice', 'Quot.sound'}
+          found = {}
+          for name, axs in re.findall(r"'([^']+)' depends on axioms: \[([^\]]*)\]", text):
+              found[name] = {a.strip() for a in axs.split(',') if a.strip()}
+          for name in re.findall(r"'([^']+)' does not depend on any axioms", text):
+              found[name] = set()
+          want = ['QRHShort.Manuscript.main', 'QRHShort.Manuscript.primes_ap', 'QRHShort.hecke_continuation']
+          bad = False
+          for w in want:
+              if w not in found:
+                  print('MISSING axiom report for', w); bad = True
+              elif found[w] - allowed:
+                  print('DISALLOWED axioms for', w, sorted(found[w] - allowed)); bad = True
+              else:
+                  print('OK', w, sorted(found[w]))
+          if re.search(r'(^|\n)\S*: error', text) or 'sorryAx' in text:
+              print('errors or sorryAx in output'); bad = True
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Upload axioms output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axioms
+          path: |
+            build/axioms.txt
+            build/build.log
+          if-no-files-found: warn

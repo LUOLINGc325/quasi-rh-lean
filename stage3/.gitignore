@@ -1,0 +1,9 @@
+.lake/
+*.log
+*.olean
+*.ilean
+*.trace
+*.map.json
+LeanLive.lean
+*.log.stderr
+__pycache__/
